@@ -32,26 +32,39 @@ class Board(object):
       return self.x
     return self.y
 
-  def checkOutofBounds(self, room):
-    if room.x1 < 0:
-      raise IndexError("Room x1 less than minmum")
-    if room.x2 > self.x:
-      raise IndexError("Room x2 greater than board max")
-    if room.y1 < 0:
-      raise IndexError("Room y1 less than minimum")
-    if room.y2 > self.y:
-      raise IndexError("Room y2 greater than board max")
+  def checkOutofBounds(self, room, returnValue=False):
+    if returnValue == False:
+      if room.x1 < 0:
+        raise IndexError("Room x1 less than minmum")
+      if room.x2 > self.x:
+        raise IndexError("Room x2 greater than board max")
+      if room.y1 < 0:
+        raise IndexError("Room y1 less than minimum")
+      if room.y2 > self.y:
+        raise IndexError("Room y2 greater than board max")
+    if returnValue == True:
+      if room.x1 < 0:
+        return 'x'
+      if room.x2 > self.x:
+        return 'x'
+      if room.y1 < 0:
+        return 'y'
+      if room.y2 > self.y:
+        return 'y'
 
   def checkOverlap(self, room):
+    '''Checks if a given room overlaps with the edge of the board or another room'''
     x1, x2 = room.x1,room.x2
     y1, y2 = room.y1, room.y2
-    for x in range(x2-x1):
-      for y in range(y2-y1):
+    print(room)
+    for x in range((x2-x1)+1):
+      for y in range((y2-y1)+1):
         try:
           if self.board[room.y1 + y][room.x1 + x].state == FULL:
+            #print('returning false')
             return False
         except IndexError:
-            return False
+          return False
     return True
 
   def establishRoom(self, room):
@@ -65,39 +78,116 @@ class Board(object):
     elif room.type == 'Chamber':
       self.chamberList.append(room)
 
-    for x in range(room.x2 - room.x1):
-      for y in range(room.y2 - room.y1):
+    #print(room)
+
+    for x in range((room.x2 - room.x1) + 1):
+      for y in range((room.y2 - room.y1) + 1):
+        #print(x,y)
         self.checkOutofBounds(room)
+        #print(self.board[room.y1 + y][room.x1 + x].state)
         self.board[room.y1 + y][room.x1 + x].setState(FULL)
+        #print(self.board[room.y1 + y][room.x1 + x].state)
         self.board[room.y1 +y][room.x1 +x].setMember(room.getType())
+    print('room done')
 
-  # def establishDoors(self):
-  #   for room in roomlist:
-  #     if room.orientation == 'East':
-  #
-  #     elif room.orientation == 'West':
-  #
-  #     elif room.orientation == 'South':
-  #
-  #     elif room.orientation == 'North':
+  def placeDoors(self):
+    for room in self.chamberList:
+      print(room)
+      if room.orientation == 'North':
+        match = False
+        options = [x for x in range(room.x1, room.x2)]
+        print('north', options)
+        while not match:
+          print(options)
+          x,y = R.choice(options), room.y1
+          try:
+            print(self.board[x][y-1])
+            print(self.board[x][y])
+            if self.board[x][y-1].state == FULL:
+              print('makin a door')
+              self.board[x][y].setDoor(True)
+              self.board[x][y-1].setDoor(True)
+              match = True
+            else:
+              options.remove(x)
+          except IndexError:
+            continue
 
-#Git test comment
+      elif room.orientation == 'South':
+        match = False
+        options = [x for x in range(room.x1, room.x2)]
+        print('south', options)
+        while not match:
+          print(options)
+          x, y = R.choice(options), room.y1
+          try:
+            print(self.board[x][y + 1])
+            print(self.board[x][y])
+            if self.board[x][y+1].state == FULL:
+              print('makin a door')
+              self.board[x][y].setDoor(True)
+              self.board[x][y+1].setDoor(True)
+              match = True
+            else:
+              options.remove(x)
+          except IndexError:
+            continue
+
+      elif room.orientation == 'West':
+        match = False
+        options = [y for y in range(room.y1, room.y2)]
+        print('west', options)
+        while not match:
+          print(options)
+          x, y = room.x1, R.choice(options)
+          try:
+            print(self.board[x-1][y])
+            print(self.board[x][y])
+            if self.board[x-1][y].state == FULL:
+              print('makin a door')
+              self.board[x][y].setDoor(True)
+              self.board[x-1][y].setDoor(True)
+              match = True
+            else:
+              options.remove(y)
+          except IndexError:
+            continue
+
+      elif room.orientation == 'East':
+        match = False
+        options = [y for y in range(room.y1, room.y2+1)]
+        print('east', options)
+        while not match:
+          print(options)
+          x, y = room.x2, R.choice(options)
+          try:
+            print(self.board[x+1][y])
+            print(self.board[x][y])
+            if self.board[x+1][y].state == FULL:
+              print('makin a door')
+              self.board[x][y].setDoor(True)
+              self.board[x+1][y].setDoor(True)
+              match = True
+            else:
+              options.remove(y)
+          except IndexError:
+            continue
 
   def __repr__(self):
     rep = '   '
-    for x in range(len(self.board[0])):
-      rep += '%3d'%(x+1)
+    for y in range(len(self.board[0])):
+      rep += '%3d'%(y)
     rep += '\n'
-    for y in range(len(self.board)):
-      rep += '%3d'%(y+1)
-      for x in range(len(self.board[y])):
-        if self.board[y][x].state == BLANK:
+    for x in range(len(self.board)):
+      rep += '%3d'%(x)
+      for y in range(len(self.board[x])):
+        if self.board[x][y].state == BLANK:
           rep += ' _ '
-        elif self.board[y][x].door:
+        elif self.board[x][y].door:
           rep += ' D '
-        elif self.board[y][x].member == 'Hall':
+        elif self.board[x][y].member == 'Hall':
           rep += ' H '
-        elif self.board[y][x].member == 'Chamber':
+        elif self.board[x][y].member == 'Chamber':
           rep += ' C '
       rep += '\n'
     return rep
@@ -119,6 +209,10 @@ class Cell(object):
 
   def setState(self, newState):
     self.state = newState
+
+  def __repr__(self):
+    return "({},{})\nState: {}\nMember: {}\nDoor: {}".format(
+    self.xLoc, self.yLoc, self.state, self.member, self.door)
 
 class Room(object):
   ''' Container object referencing cells on a board given x, y, width, height'''
@@ -163,10 +257,10 @@ def hallFactory(board):
   width = R.randint(maxSize // 2,maxSize) #arbitrary values for testing
   height = R.randint(maxSize // 2, maxSize) #arbitrary values for testing
   #print(width, height)
-  x2 = R.randint(width ,board.x)
-  x1 = x2 - width
-  y2 = R.randint(height ,board.y)
-  y1 = y2 - height
+  x2 = R.randint(width, board.x)
+  x1 = x2 - width + 1
+  y2 = R.randint(height, board.y)
+  y1 = y2 - height + 1
   room = Room(x1,x2, y1, y2, 'Hall')
   if board.checkOverlap(room):
     return room
@@ -191,131 +285,154 @@ def chamberFactory(board):
     return chamberFactory(board)
 
 def chambersSouth(board, hall, start, step, maxSize):
-  finish = False
-  while finish == False:
-    width = R.randrange(0, maxSize, step)
-    height = R.randrange(0, maxSize, step)
-    newRoom = Room(start[0], start[0] + width, start[1], start[1] + height, 'Chamber', 'West')
-    # print(newRoom)
+  #finish = False
+  #while finish == False:
+    #input('south:')
+  widthOptions = [w for w in range(step, maxSize + 1, step)]
+  heightOptions = [h for h in range(step, maxSize + 1, step)]
+  height = 0
+  while (len(widthOptions) > 0 and len(heightOptions) > 0) and start[1] + height <= hall.y2:
+    width = R.choice(widthOptions)
+    height = R.choice(heightOptions)
+    newRoom = Room(start[0], start[0] + width - 1, start[1], start[1] + height - 1, 'Chamber', 'West')
+    #print(newRoom)
+    #input("south")
+    if board.checkOutofBounds(newRoom, True) == 'x':
+      widthOptions.remove(width)
+    if board.checkOutofBounds(newRoom, True) == 'y':
+      heightOptions.remove(height)
     if board.checkOverlap(newRoom):
       try:
         board.establishRoom(newRoom)
+        start = (start[0], start[1] + height)
+        width, height = 0, 0
+        #print(board)
       except IndexError:
         continue
+
       # print(newRoom)
       # print(board)
-    else:
-      #print('checkOverlap fail south')
-      continue
-    if start[1] + height >= hall.y2:
-      finish = True
-    else:
-      start = (start[0], start[1] + height)
+    #if start[1] + height >= hall.y2:
+      #finish = True
 
 def chambersWest(board, hall, start, step, maxSize):
-  finish = False
-  while finish == False:
-    width = R.randrange(0, maxSize, step)
-    height = R.randrange(0, maxSize, step)
-    newRoom = Room(start[0] - width, start[0], start[1], start[1] + height, 'Chamber', 'North')
+  #finish = False
+  #while finish == False:
+  widthOptions = [w for w in range(step, maxSize + 1, step)]
+  heightOptions = [h for h in range(step, maxSize + 1, step)]
+  width, height = 0, 0
+  while (len(widthOptions) > 0 and len(heightOptions) > 0) and start[0] - width >= hall.x1:
+    width = R.choice(widthOptions)
+    height = R.choice(heightOptions)
+    #input("West")
+    newRoom = Room(start[0] - width + 1, start[0], start[1], start[1] + height - 1, 'Chamber', 'North')
     # print(newRoom)
+    if board.checkOutofBounds(newRoom, True) == 'x':
+      widthOptions.remove(width)
+    if board.checkOutofBounds(newRoom, True) == 'y':
+      heightOptions.remove(height)
     if board.checkOverlap(newRoom):
       try:
         board.establishRoom(newRoom)
+        start = (start[0] - width, start[1])
+        width, height = 0, 0
       except IndexError:
         continue
-      # print(newRoom)
-      # print(board)
-    else:
-      #print('checkOverlap fail west')
-      continue
-    if start[0] - width <= hall.x1:
+    #if start[0] - width <= hall.x1:
       # chambers have reached the left edge of the hall, time to change directions
-      finish = True
-    else:
-      start = (start[0] - width, start[1])
+      #finish = True
 
 def chambersEast(board, hall, start, step, maxSize):
-  finish = False
-  while finish == False:
-    width = R.randrange(0, maxSize, step)
-    height = R.randrange(0, maxSize, step)
-    newRoom = Room(start[0], start[0] + width, start[1], start[1] - height, 'Chamber', 'South')
-    # print(newRoom)
+  #finish = False
+  #while finish == False:
+  widthOptions = [w for w in range(step, maxSize + 1, step)]
+  heightOptions = [h for h in range(step, maxSize + 1, step)]
+  #print(widthOptions)
+  #print(heightOptions)
+  width, height = 0, 0
+  while (len(widthOptions) > 0 and len(heightOptions) > 0) and start[0] + width <= hall.x2:
+    width = R.choice(widthOptions)
+    height = R.choice(heightOptions)
+    #print(width, height)
+    #input('east')
+
+    newRoom = Room(start[0], start[0] + width - 1, start[1], start[1] - height + 1, 'Chamber', 'South')
+  # print(newRoom)
+    if board.checkOutofBounds(newRoom, True) == 'x':
+      widthOptions.remove(width)
+    if board.checkOutofBounds(newRoom, True) == 'y':
+      heightOptions.remove(height)
     if board.checkOverlap(newRoom):
       try:
         board.establishRoom(newRoom)
+        start = (start[0] + width, start[1])
+        width, height = 0, 0
+        #print(board)
       except IndexError:
         continue
-      # print(newRoom)
-      # print(board)
-    else:
-      #print('checkOverlap fail east')
-      continue
-    if start[0] + width >= hall.x2:
+    #if start[0] + width >= hall.x2:
       # chambers have reached the right edge of the hall, time to change directions
-      finish = True
-    else:
-      start = (start[0] + width, start[1])
+      #finish = True
 
 def chambersNorth(board, hall, start, step, maxSize):
-  finish = False
-  while finish == False:
-    width = R.randrange(0, maxSize, step)
-    height = R.randrange(0, maxSize, step)
-    newRoom = Room(start[0] - width, start[0], start[1], start[1] - height, 'Chamber', 'East')
-    # print(newRoom)
+  #finish = False
+  #while finish == False:
+  widthOptions = [w for w in range(step, maxSize + 1, step)]
+  heightOptions = [h for h in range(step, maxSize + 1, step)]
+  width, height = 0, 0
+  while (len(widthOptions) > 0 and len(heightOptions) > 0) and start[1] - height >= hall.y1:
+    width = R.choice(widthOptions)
+    height = R.choice(heightOptions)
+    newRoom = Room(start[0] - width + 1, start[0], start[1], start[1] - height + 1, 'Chamber', 'East')
+      # print(newRoom)
+    if board.checkOutofBounds(newRoom, True) == 'x':
+      widthOptions.remove(width)
+    if board.checkOutofBounds(newRoom, True) == 'y':
+      heightOptions.remove(height)
     if board.checkOverlap(newRoom):
       try:
         board.establishRoom(newRoom)
+        start = (start[0], start[1] - height)
+        width, height = 0, 0
       except IndexError:
         continue
-      # print(newRoom)
-      # print(board)
-    else:
-      #print('checkOverlap fail north ')
-      continue
-    if start[1] - height <= hall.y1:
+    #if start[1] - height <= hall.y1:
       # chambers have reached the top edge of the hall, all done
-      finish = True
-    else:
-      start = (start[0], start[1]-height)
+      #finish = True
 
 def chambersAroundHall(board, hall, skip=None):
   '''Places chambers around a hall calling helper functions,
   sides can be skipped by providing an optional list of sides to be skipped'''
-  maxSize = board.getMinDimension() // 5
-  start = (hall.x1 , hall.y1)
   step = 3
-  print(skip)
+  maxSize = board.getMinDimension() // 5  if board.getMinDimension() // 5 >= step else step
+  start = (hall.x1 , hall.y1 - 1)
 
   if 'North' not in skip:
     if hall.y1 > 4:
       # topside
       chambersEast(board, hall, start, step, maxSize)
-      print('topside done')
-  start = (hall.x2, hall.y1)
-
+      #print('topside done')
+  start = (hall.x2 + 1, hall.y1)
+  #input('proceed')
   if 'East' not in skip:
     if board.x - hall.x2 > 4:
       # right side
       chambersSouth(board, hall, start, step, maxSize)
-      print('right side done')
-  start = (hall.x2, hall.y2)
-
+      #print('right side done')
+  start = (hall.x2, hall.y2 + 1)
+  #input('proceed')
   if 'South' not in skip:
     if board.y - hall.y2 > 4:
       # bottom side
       chambersWest(board, hall, start, step, maxSize)
-      print('bottom side done')
-  start = (hall.x1, hall.y2)
-
-
+      #print('bottom side done')
+  start = (hall.x1 - 1, hall.y2)
+  #input('proceed')
   if 'West' not in skip:
     if hall.x1 > 4:
       #left side
       chambersNorth(board, hall, start, step, maxSize)
-      print('left side done')
+      #print('left side done')
 
 def dungeonmaker(board):
   '''Main algorithm implementation'''
@@ -323,17 +440,20 @@ def dungeonmaker(board):
   pass
 
 
-board = Board(50, 40)
+board = Board(40, 40)
 #print(board)
 hall = hallFactory(board)
 board.establishRoom(hall)
-#print(hall)
-#print(board)
+#chambersEast(board,hall,(hall.x1, hall.y1-1), 3, board.getMinDimension()//5)
+#chambersSouth(board,hall,(hall.x2 + 1, hall.y1), 3, board.getMinDimension()//5)
 chambersAroundHall(board, hall, hall.orientation)
-hall2 = hallFactory(board)
-board.establishRoom(hall2)
-chambersAroundHall(board, hall2, hall2.orientation)
+#hall2 = hallFactory(board)
+#board.establishRoom(hall2)
+#chambersAroundHall(board, hall2, hall2.orientation)
 print(board)
+#board.placeDoors()
+#print(board)
+
 
 
 
