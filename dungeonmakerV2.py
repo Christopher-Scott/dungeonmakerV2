@@ -17,12 +17,12 @@ class Board(object):
     self.y = yDimension
     self.hallList = []
     self.chamberList = []
-    self.board = []
+    self.board = [[] for y in range(self.y)]
+    #print(self.board)
     self.getBlankBoard()
 
   def getBlankBoard(self):
     for y in range(self.y):
-      self.board.append([])
       for x in range(self.x):
         newCell = Cell(y,x)
         self.board[y].append(newCell)
@@ -78,17 +78,19 @@ class Board(object):
     elif room.type == 'Chamber':
       self.chamberList.append(room)
 
-    #print(room)
-
-    for x in range((room.x2 - room.x1) + 1):
-      for y in range((room.y2 - room.y1) + 1):
-        #print(x,y)
+    print(room)
+    '''investigate whether this runs in (y,x) or (x,y)'''
+    for y in range((room.y2 - room.y1) + 1):
+      for x in range((room.x2 - room.x1) + 1):
         self.checkOutofBounds(room)
         #print(self.board[room.y1 + y][room.x1 + x].state)
         self.board[room.y1 + y][room.x1 + x].setState(FULL)
+        #print(room.y1 + y,room.x1 + x,self.board[room.y1 + y][room.x1 + x].state)
         #print(self.board[room.y1 + y][room.x1 + x].state)
-        self.board[room.y1 +y][room.x1 +x].setMember(room.getType())
-    print('room done')
+        self.board[room.y1+y][room.x1+x].setMember(room.getType())
+        #print(room.y1 + y, room.x1 + x, self.board[room.y1 + y][room.x1 + x].member)
+    #print(room)
+    #print('room done')
 
   def placeDoors(self):
     for room in self.chamberList:
@@ -96,17 +98,17 @@ class Board(object):
       if room.orientation == 'North':
         match = False
         options = [x for x in range(room.x1, room.x2)]
-        print('north', options)
-        while not match:
-          print(options)
+        #print('north', options)
+        while not match and len(options) > 0:
+          #print(options)
           x,y = R.choice(options), room.y1
           try:
-            print(self.board[x][y-1])
-            print(self.board[x][y])
-            if self.board[x][y-1].state == FULL:
-              print('makin a door')
-              self.board[x][y].setDoor(True)
-              self.board[x][y-1].setDoor(True)
+            #print(self.board[y-1][x])
+            #print(self.board[y][x])
+            if self.board[y-1][x].state == FULL:
+              #print('makin a door')
+              self.board[y][x].setDoor(True)
+              self.board[y-1][x].setDoor(True)
               match = True
             else:
               options.remove(x)
@@ -116,17 +118,17 @@ class Board(object):
       elif room.orientation == 'South':
         match = False
         options = [x for x in range(room.x1, room.x2)]
-        print('south', options)
-        while not match:
-          print(options)
-          x, y = R.choice(options), room.y1
+        #print('south', options)
+        while not match and len(options) > 0:
+          #print(options)
+          x, y = R.choice(options), room.y2
           try:
-            print(self.board[x][y + 1])
-            print(self.board[x][y])
-            if self.board[x][y+1].state == FULL:
-              print('makin a door')
-              self.board[x][y].setDoor(True)
-              self.board[x][y+1].setDoor(True)
+            #print(self.board[y+1][x])
+            #print(self.board[y][x])
+            if self.board[y+1][x].state == FULL:
+              #print('makin a door')
+              self.board[y][x].setDoor(True)
+              self.board[y+1][x].setDoor(True)
               match = True
             else:
               options.remove(x)
@@ -135,18 +137,18 @@ class Board(object):
 
       elif room.orientation == 'West':
         match = False
-        options = [y for y in range(room.y1, room.y2)]
-        print('west', options)
-        while not match:
-          print(options)
+        options = [y for y in range(room.y1, room.y2+1)]
+        #print('west', options)
+        while not match and len(options)> 0:
+          #print(options)
           x, y = room.x1, R.choice(options)
           try:
-            print(self.board[x-1][y])
-            print(self.board[x][y])
-            if self.board[x-1][y].state == FULL:
-              print('makin a door')
-              self.board[x][y].setDoor(True)
-              self.board[x-1][y].setDoor(True)
+            #print(self.board[y][x-1])
+            #print(y,x, self.board[y][x])
+            if self.board[y][x-1].state == FULL and self.board[x][y].state == FULL:
+              #print('makin a door')
+              self.board[y][x].setDoor(True)
+              self.board[y][x-1].setDoor(True)
               match = True
             else:
               options.remove(y)
@@ -156,17 +158,17 @@ class Board(object):
       elif room.orientation == 'East':
         match = False
         options = [y for y in range(room.y1, room.y2+1)]
-        print('east', options)
-        while not match:
-          print(options)
+        #print('east', options)
+        while not match and len(options) > 0:
+          #print(options)
           x, y = room.x2, R.choice(options)
           try:
-            print(self.board[x+1][y])
-            print(self.board[x][y])
-            if self.board[x+1][y].state == FULL:
-              print('makin a door')
-              self.board[x][y].setDoor(True)
-              self.board[x+1][y].setDoor(True)
+            #print(self.board[y][x+1])
+            #print(self.board[y][x])
+            if self.board[y][x+1].state == FULL:
+              #print('makin a door')
+              self.board[y][x].setDoor(True)
+              self.board[y][x+1].setDoor(True)
               match = True
             else:
               options.remove(y)
@@ -175,26 +177,26 @@ class Board(object):
 
   def __repr__(self):
     rep = '   '
-    for y in range(len(self.board[0])):
-      rep += '%3d'%(y)
-    rep += '\n'
-    for x in range(len(self.board)):
+    for x in range(len(self.board[0])):
       rep += '%3d'%(x)
-      for y in range(len(self.board[x])):
-        if self.board[x][y].state == BLANK:
+    rep += '\n'
+    for y in range(len(self.board)):
+      rep += '%3d'%(y)
+      for x in range(len(self.board[y])):
+        if self.board[y][x].state == BLANK:
           rep += ' _ '
-        elif self.board[x][y].door:
+        elif self.board[y][x].door:
           rep += ' D '
-        elif self.board[x][y].member == 'Hall':
+        elif self.board[y][x].member == 'Hall':
           rep += ' H '
-        elif self.board[x][y].member == 'Chamber':
+        elif self.board[y][x].member == 'Chamber':
           rep += ' C '
       rep += '\n'
     return rep
 
 class Cell(object):
   '''Base Data structure'''
-  def __init__(self, xLocation, yLocation, member=None, state=BLANK):
+  def __init__(self, yLocation, xLocation, member=None, state=BLANK):
     self.xLoc = xLocation
     self.yLoc = yLocation
     self.state = state
@@ -212,7 +214,7 @@ class Cell(object):
 
   def __repr__(self):
     return "({},{})\nState: {}\nMember: {}\nDoor: {}".format(
-    self.xLoc, self.yLoc, self.state, self.member, self.door)
+    self.yLoc, self.xLoc, self.state, self.member, self.door)
 
 class Room(object):
   ''' Container object referencing cells on a board given x, y, width, height'''
@@ -240,7 +242,7 @@ class Room(object):
 
   def __repr__(self):
     return "Points: ({},{}),({},{})\nType: {}\nOrientation: {}".format(
-    self.x1, self.y1, self.x2, self.y2, self.type, self. orientation)
+    self.y1, self.x1, self.y2, self.x2, self.type, self. orientation)
 
 class Hallway(object):
   def __init__(self):
@@ -255,13 +257,14 @@ def hallFactory(board):
   # Factory to produce Hall room objects with size restricitons
   maxSize = board.getMinDimension() // 3
   width = R.randint(maxSize // 2,maxSize) #arbitrary values for testing
-  height = R.randint(maxSize // 2, maxSize) #arbitrary values for testing
+  height = R.randint(maxSize // 2, maxSize) #arbitrary values for testing'
+  orientationList = ['North', 'South', 'East', 'West']
   #print(width, height)
   x2 = R.randint(width, board.x)
   x1 = x2 - width + 1
   y2 = R.randint(height, board.y)
   y1 = y2 - height + 1
-  room = Room(x1,x2, y1, y2, 'Hall')
+  room = Room(x1,x2, y1, y2, 'Hall', R.choice(orientationList))
   if board.checkOverlap(room):
     return room
   else:
@@ -288,8 +291,8 @@ def chambersSouth(board, hall, start, step, maxSize):
   #finish = False
   #while finish == False:
     #input('south:')
-  widthOptions = [w for w in range(step, maxSize + 1, step)]
-  heightOptions = [h for h in range(step, maxSize + 1, step)]
+  widthOptions = [w for w in range(3, maxSize + 1, step)]
+  heightOptions = [h for h in range(3, maxSize + 1, step)]
   height = 0
   while (len(widthOptions) > 0 and len(heightOptions) > 0) and start[1] + height <= hall.y2:
     width = R.choice(widthOptions)
@@ -318,8 +321,8 @@ def chambersSouth(board, hall, start, step, maxSize):
 def chambersWest(board, hall, start, step, maxSize):
   #finish = False
   #while finish == False:
-  widthOptions = [w for w in range(step, maxSize + 1, step)]
-  heightOptions = [h for h in range(step, maxSize + 1, step)]
+  widthOptions = [w for w in range(3, maxSize + 1, step)]
+  heightOptions = [h for h in range(3, maxSize + 1, step)]
   width, height = 0, 0
   while (len(widthOptions) > 0 and len(heightOptions) > 0) and start[0] - width >= hall.x1:
     width = R.choice(widthOptions)
@@ -345,8 +348,8 @@ def chambersWest(board, hall, start, step, maxSize):
 def chambersEast(board, hall, start, step, maxSize):
   #finish = False
   #while finish == False:
-  widthOptions = [w for w in range(step, maxSize + 1, step)]
-  heightOptions = [h for h in range(step, maxSize + 1, step)]
+  widthOptions = [w for w in range(3, maxSize + 1, step)]
+  heightOptions = [h for h in range(3, maxSize + 1, step)]
   #print(widthOptions)
   #print(heightOptions)
   width, height = 0, 0
@@ -377,8 +380,8 @@ def chambersEast(board, hall, start, step, maxSize):
 def chambersNorth(board, hall, start, step, maxSize):
   #finish = False
   #while finish == False:
-  widthOptions = [w for w in range(step, maxSize + 1, step)]
-  heightOptions = [h for h in range(step, maxSize + 1, step)]
+  widthOptions = [w for w in range(3, maxSize + 1, step)]
+  heightOptions = [h for h in range(3, maxSize + 1, step)]
   width, height = 0, 0
   while (len(widthOptions) > 0 and len(heightOptions) > 0) and start[1] - height >= hall.y1:
     width = R.choice(widthOptions)
@@ -403,8 +406,8 @@ def chambersNorth(board, hall, start, step, maxSize):
 def chambersAroundHall(board, hall, skip=None):
   '''Places chambers around a hall calling helper functions,
   sides can be skipped by providing an optional list of sides to be skipped'''
-  step = 3
-  maxSize = board.getMinDimension() // 5  if board.getMinDimension() // 5 >= step else step
+  step = 1
+  maxSize = board.getMinDimension() // 8 if board.getMinDimension() // 8 >= step else step
   start = (hall.x1 , hall.y1 - 1)
 
   if 'North' not in skip:
@@ -434,6 +437,18 @@ def chambersAroundHall(board, hall, skip=None):
       chambersNorth(board, hall, start, step, maxSize)
       #print('left side done')
 
+def testHallAndChamber(board):
+  x2 = board.x // 2
+  x1 = x2 - 10
+  y2 = board.y // 2
+  y1 = y2 - 10
+  hall = Room(x1, x2, y1, y2, 'Hall', 'North')
+  board.establishRoom(hall)
+
+  chamber = Room(x2+1,x2+4,y1,y1+4,'Chamber', 'West')
+  board.establishRoom(chamber)
+
+
 def dungeonmaker(board):
   '''Main algorithm implementation'''
   #create Halls
@@ -447,12 +462,13 @@ board.establishRoom(hall)
 #chambersEast(board,hall,(hall.x1, hall.y1-1), 3, board.getMinDimension()//5)
 #chambersSouth(board,hall,(hall.x2 + 1, hall.y1), 3, board.getMinDimension()//5)
 chambersAroundHall(board, hall, hall.orientation)
-#hall2 = hallFactory(board)
-#board.establishRoom(hall2)
-#chambersAroundHall(board, hall2, hall2.orientation)
+hall2 = hallFactory(board)
+board.establishRoom(hall2)
+chambersAroundHall(board, hall2, hall2.orientation)
+#testHallAndChamber(board)
 print(board)
-#board.placeDoors()
-#print(board)
+board.placeDoors()
+print(board)
 
 
 
