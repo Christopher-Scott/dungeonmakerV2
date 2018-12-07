@@ -1,5 +1,5 @@
 import random as R
-import time
+import copy
 
 FULL = 'Full'
 BLANK = 'Blank'
@@ -9,6 +9,18 @@ def checkAB(a, b ):
   if a > b:
     b, a = a, b
   return a, b
+
+def dist(a, b):
+  #Calculates distance between two tuple pairs
+  return ((b[0]-a[0])**2 + (b[1]-a[1])**2)**0.5
+
+def reconstruct_path(cameFrom, current):
+  totalPath = [current]
+  while current in cameFrom.keys():
+    current = cameFrom[current]
+    totalPath.append(current)
+  #print(totalPath)
+  return totalPath
 
 class Board(object):
   '''Data structure to hold cells'''
@@ -56,7 +68,7 @@ class Board(object):
     '''Checks if a given room overlaps with the edge of the board or another room'''
     x1, x2 = room.x1,room.x2
     y1, y2 = room.y1, room.y2
-    print(room)
+    #print(room)
     for x in range((x2-x1)+1):
       for y in range((y2-y1)+1):
         try:
@@ -78,7 +90,7 @@ class Board(object):
     elif room.type == 'Chamber':
       self.chamberList.append(room)
 
-    print(room)
+    #print(room)
     '''investigate whether this runs in (y,x) or (x,y)'''
     for y in range((room.y2 - room.y1) + 1):
       for x in range((room.x2 - room.x1) + 1):
@@ -90,11 +102,11 @@ class Board(object):
         self.board[room.y1+y][room.x1+x].setMember(room.getType())
         #print(room.y1 + y, room.x1 + x, self.board[room.y1 + y][room.x1 + x].member)
     #print(room)
-    #print('room done')
+    #print('room don
 
   def placeDoors(self):
     for room in self.chamberList:
-      print(room)
+      #print(room)
       if room.orientation == 'North':
         match = False
         options = [x for x in range(room.x1, room.x2)]
@@ -175,22 +187,117 @@ class Board(object):
           except IndexError:
             continue
 
+  def hallwayPather(self, start, finish):
+    '''Using A* search find the shortest path for the hallway
+       start and finish are cell objects'''
+    #print(start, finish)
+    closedSet = set()
+    openSet = set()
+    openSet.add((start.yLoc,start.xLoc))
+
+    gScore = {(y,x):'i' for x in range(self.x) for y in range(self.y)}
+    gScore[(start.yLoc,start.xLoc)] = 0
+
+    fScore = {(y,x):1000000 for x in range(self.x) for y in range(self.y)}
+    fScore[(start.yLoc, start.xLoc)] = dist((start.yLoc, start.xLoc),(finish.yLoc, finish.xLoc))
+    cameFrom = {}
+    while len(openSet) != 0:
+      currentMin = 1000000
+      for elem in openSet:
+        if fScore[elem] < currentMin:
+          currentMin = fScore[elem]
+          current = elem
+
+      if self.board[current[0]][current[1]] == finish:
+        #print(finish, '\n', current)
+        #print(reconstruct_path(cameFrom, current))
+        return reconstruct_path(cameFrom, current)
+
+      openSet.discard(current)
+      closedSet.add(current)
+
+      adjacents = [(current[0],current[1] - 1), (current[0], current[1] + 1),
+                    (current[0]-1, current[1]),(current[0]+ 1, current[1])]
+      for neighbor in adjacents:
+        if 0 <= neighbor[0] < self.y and 0 <= neighbor[1] < self.x:
+
+          if self.board[neighbor[0]][neighbor[1]].state != BLANK:
+            continue
+          if neighbor in closedSet:
+            continue
+          tentative_gScore = gScore[current] + dist(current, neighbor)
+          if neighbor not in openSet:
+            openSet.add(neighbor)
+          elif tentative_gScore >= gScore[neighbor]:
+            continue
+
+          cameFrom[neighbor] = current
+          gScore[neighbor] = tentative_gScore
+          fScore[neighbor] = gScore[neighbor] + dist(neighbor, (finish.yLoc, finish.xLoc))
+    #print('I never finished')
+
+    '''print('closedSet\n',closedSet)
+    print('-'*50)
+    print('openSet\n',openSet)
+    print('\ngScore')
+    print('-'*50)
+    for k, v in gScore.items():
+      print(k, v)
+    print('\nfScore')
+    print('-'*50)
+    for k, v in fScore.items():
+      print(k, v)
+    print('\ncameFrom')
+    print('-'*50)
+    for k, v in cameFrom.items():
+      print(k, v)'''
+
+  def addHallway(self, hallway):
+    if len(self.hallList) > 1:
+      options = self.hallList[:]
+      start = options.pop()
+      while len(options) != 0:
+        startTuple = R.choice(start.getOrientSide())
+        startCell = self.board[startTuple[0]][startTuple[1]]
+        #print(startCell)
+        finishTuple = R.choice(options[0].getOrientSide())
+        finishCell = self.board[finishTuple[0]][finishTuple[1]]
+        #print(finishCell)
+        path = self.hallwayPather(startCell, finishCell)
+        #print(path)
+        hallway.addSequence(path)
+        start = options.pop()
+
+  def establishHallway(self, hallway):
+    #print(hallway)
+    for elem in hallway.cells:
+      cell = self.board[elem[0]][elem[1]]
+      #print(cell)
+      if cell.state == BLANK:
+        #print('Setting State')
+        cell.setState(FULL)
+        cell.setMember('Hallway')
+
+
   def __repr__(self):
-    rep = '   '
+    rep = '  '
     for x in range(len(self.board[0])):
       rep += '%3d'%(x)
     rep += '\n'
     for y in range(len(self.board)):
       rep += '%3d'%(y)
       for x in range(len(self.board[y])):
-        if self.board[y][x].state == BLANK:
+        cell = self.board[y][x]
+        if cell.state == BLANK:
           rep += ' _ '
-        elif self.board[y][x].door:
+        elif cell.door:
           rep += ' D '
-        elif self.board[y][x].member == 'Hall':
+        elif cell.member == 'Hall':
           rep += ' H '
-        elif self.board[y][x].member == 'Chamber':
+        elif cell.member == 'Chamber':
           rep += ' C '
+        elif cell.member == 'Hallway':
+          rep += ' X '
       rep += '\n'
     return rep
 
@@ -203,6 +310,18 @@ class Cell(object):
     self.member = member
     self.door = False
 
+  def __eq__(self, other):
+    if self.xLoc == other.xLoc and self.yLoc == other.yLoc:
+      return True
+    else:
+      return False
+
+  def __ne__(self, other):
+    if self.xLoc != other.xLoc or self.yLoc != other.yLoc:
+      return True
+    else:
+      return False
+
   def setDoor(self, newDoor):
     self.door = newDoor
 
@@ -211,6 +330,15 @@ class Cell(object):
 
   def setState(self, newState):
     self.state = newState
+
+  def distance(self, otherCell):
+    # calculates distance between two cells, returns float and accepts a tuple of (y,x) or a cell objectas argument
+    if type(otherCell) != type((0,0)):
+      cellTup = (otherCell.yLoc, otherCell.xLoc)
+    else:
+      cellTup = otherCell
+    return ((self.yLoc - cellTup[0])**2 + (self.xLoc - cellTup[1])**2)**0.5
+
 
   def __repr__(self):
     return "({},{})\nState: {}\nMember: {}\nDoor: {}".format(
@@ -240,18 +368,34 @@ class Room(object):
   def getType(self):
     return self.type
 
+  def getOrientSide(self):
+    # returns a sequence of tuple cell locations along the orientation facing side of a room
+    orientDict = {'North':[(self.y1 - 1, x) for x in range(self.x1, self.x2 + 1)],
+                  'South':[(self.y2 + 1, x) for x in range(self.x1, self.x2 + 1)],
+                  'East':[(y, self.x2 + 1) for y in range(self.y1, self.y2 + 1)],
+                  'West':[(y, self.x1 - 1) for y in range(self.y1, self.y2 + 1)]
+                  }
+    return orientDict[self.orientation]
+
   def __repr__(self):
     return "Points: ({},{}),({},{})\nType: {}\nOrientation: {}".format(
     self.y1, self.x1, self.y2, self.x2, self.type, self. orientation)
 
 class Hallway(object):
   def __init__(self):
-    self.width = 2
+    self.width = 1
     self.type = "Hallway"
     self.cells = []
 
   def addToCells(self, cellTuple):
     self.cells.append(cellTuple)
+
+  def addSequence(self, sequence):
+    for elem in sequence:
+      self.addToCells(elem)
+
+  def __repr__(self):
+    return f"Hallway\nWidth:{self.width}\n{self.cells}"
 
 def hallFactory(board):
   # Factory to produce Hall room objects with size restricitons
@@ -438,6 +582,7 @@ def chambersAroundHall(board, hall, skip=None):
       #print('left side done')
 
 def testHallAndChamber(board):
+  '''Creates a static Hall and Chamber for testing other functions'''
   x2 = board.x // 2
   x1 = x2 - 10
   y2 = board.y // 2
@@ -448,6 +593,22 @@ def testHallAndChamber(board):
   chamber = Room(x2+1,x2+4,y1,y1+4,'Chamber', 'West')
   board.establishRoom(chamber)
 
+def test2Hall(board):
+  '''Creates two static Halls for testing other functions'''
+  x2 = board.x // 4
+  x1 = x2 - 5
+  y2 = board.y // 4
+  y1 = y2 - 5
+  hall = Room(x1,x2, y1, y2, 'Hall', 'East')
+  board.establishRoom(hall)
+
+  x2 = board.x // 4 * 3
+  x1 = x2 - 5
+  y2 = board.y // 4 * 3
+  y1 = y2 - 5
+  hall2 = Room(x1, x2, y1, y2, 'Hall', 'West')
+  board.establishRoom(hall2)
+
 
 def dungeonmaker(board):
   '''Main algorithm implementation'''
@@ -456,18 +617,34 @@ def dungeonmaker(board):
 
 
 board = Board(40, 40)
-#print(board)
+
 hall = hallFactory(board)
 board.establishRoom(hall)
-#chambersEast(board,hall,(hall.x1, hall.y1-1), 3, board.getMinDimension()//5)
-#chambersSouth(board,hall,(hall.x2 + 1, hall.y1), 3, board.getMinDimension()//5)
 chambersAroundHall(board, hall, hall.orientation)
+
 hall2 = hallFactory(board)
 board.establishRoom(hall2)
 chambersAroundHall(board, hall2, hall2.orientation)
+
+#hall3 = hallFactory(board)
+#board.establishRoom(hall3)
+#chambersAroundHall(board, hall2, hall2.orientation)
+
 #testHallAndChamber(board)
-print(board)
-board.placeDoors()
+#test2Hall(board)
+#print(board)
+
+corridor = Hallway()
+
+board.addHallway(corridor)
+board.establishHallway(corridor)
+
+#path = board.hallwayPather(board.board[0][6],board.board[10][9])
+#corridor.addSequence(path)
+#board.establishHallway(corridor)
+
+
+#board.placeDoors()
 print(board)
 
 
