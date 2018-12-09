@@ -1,14 +1,16 @@
 import random as R
-import time
+
 
 FULL = 'Full'
 BLANK = 'Blank'
 
+
 def checkAB(a, b ):
-  #swaps the inputs if a > b
+  # swaps the inputs if a > b
   if a > b:
     b, a = a, b
   return a, b
+
 
 class Board(object):
   '''Data structure to hold cells'''
@@ -32,8 +34,8 @@ class Board(object):
       return self.x
     return self.y
 
-  def checkOutofBounds(self, room, returnValue=False):
-    if returnValue == False:
+  def checkOutofBounds(self, room, returnvalue=False):
+    if not returnvalue:
       if room.x1 < 0:
         raise IndexError("Room x1 less than minmum")
       if room.x2 > self.x:
@@ -42,7 +44,7 @@ class Board(object):
         raise IndexError("Room y1 less than minimum")
       if room.y2 > self.y:
         raise IndexError("Room y2 greater than board max")
-    if returnValue == True:
+    if returnvalue:
       if room.x1 < 0:
         return 'x'
       if room.x2 > self.x:
@@ -56,7 +58,7 @@ class Board(object):
     '''Checks if a given room overlaps with the edge of the board or another room'''
     x1, x2 = room.x1,room.x2
     y1, y2 = room.y1, room.y2
-    print(room)
+    #print(room)
     for x in range((x2-x1)+1):
       for y in range((y2-y1)+1):
         try:
@@ -78,7 +80,7 @@ class Board(object):
     elif room.type == 'Chamber':
       self.chamberList.append(room)
 
-    print(room)
+    #print(room)
     '''investigate whether this runs in (y,x) or (x,y)'''
     for y in range((room.y2 - room.y1) + 1):
       for x in range((room.x2 - room.x1) + 1):
@@ -94,7 +96,7 @@ class Board(object):
 
   def placeDoors(self):
     for room in self.chamberList:
-      print(room)
+      #print(room)
       if room.orientation == 'North':
         match = False
         options = [x for x in range(room.x1, room.x2)]
@@ -194,6 +196,7 @@ class Board(object):
       rep += '\n'
     return rep
 
+
 class Cell(object):
   '''Base Data structure'''
   def __init__(self, yLocation, xLocation, member=None, state=BLANK):
@@ -215,6 +218,7 @@ class Cell(object):
   def __repr__(self):
     return "({},{})\nState: {}\nMember: {}\nDoor: {}".format(
     self.yLoc, self.xLoc, self.state, self.member, self.door)
+
 
 class Room(object):
   ''' Container object referencing cells on a board given x, y, width, height'''
@@ -451,11 +455,11 @@ def testHallAndChamber(board):
 
 def dungeonmaker(board):
   '''Main algorithm implementation'''
-  #create Halls
+  # create Halls
   pass
 
 
-board = Board(40, 40)
+board = Board(50, 40)
 #print(board)
 hall = hallFactory(board)
 board.establishRoom(hall)
@@ -466,9 +470,10 @@ hall2 = hallFactory(board)
 board.establishRoom(hall2)
 chambersAroundHall(board, hall2, hall2.orientation)
 #testHallAndChamber(board)
-print(board)
+#print(board)
 board.placeDoors()
 print(board)
+#print(board.hallList)
 
 
 
