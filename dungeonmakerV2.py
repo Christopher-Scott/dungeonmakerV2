@@ -1,8 +1,8 @@
 import random as R
 import copy
 
-FULL = 'Full'
-BLANK = 'Blank'
+FULL = True
+BLANK = False
 
 def checkAB(a, b ):
   #swaps the inputs if a > b
@@ -44,7 +44,7 @@ class Board(object):
       return self.x
     return self.y
 
-  def checkOutofBounds(self, room, returnValue=False):
+  def checkRoomBounds(self, room, returnValue=False):
     if returnValue == False:
       if room.x1 < 0:
         raise IndexError("Room x1 less than minmum")
@@ -57,14 +57,14 @@ class Board(object):
     if returnValue == True:
       if room.x1 < 0:
         return 'x'
-      if room.x2 > self.x:
+      if room.x2 >= self.x:
         return 'x'
       if room.y1 < 0:
         return 'y'
-      if room.y2 > self.y:
+      if room.y2 >= self.y:
         return 'y'
 
-  def checkHallwayBounds(self, cellTuple):
+  def checkBounds(self, cellTuple):
     if 0 <= cellTuple[0] < self.y and 0 <= cellTuple[1] < self.x:
       return True
     else:
@@ -78,7 +78,7 @@ class Board(object):
     for x in range((x2-x1)+1):
       for y in range((y2-y1)+1):
         try:
-          if self.board[room.y1 + y][room.x1 + x].state == FULL:
+          if self.board[room.y1 + y][room.x1 + x].state:
             #print('returning false')
             return False
         except IndexError:
@@ -100,93 +100,173 @@ class Board(object):
     '''investigate whether this runs in (y,x) or (x,y)'''
     for y in range((room.y2 - room.y1) + 1):
       for x in range((room.x2 - room.x1) + 1):
-        self.checkOutofBounds(room)
+        self.checkRoomBounds(room)
         #print(self.board[room.y1 + y][room.x1 + x].state)
         self.board[room.y1 + y][room.x1 + x].setState(FULL)
         self.board[room.y1+y][room.x1+x].setMember(room.getType())
 
-  def placeDoors(self):
-    for room in self.chamberList:
-      #print(room)
-      if room.orientation == 'North':
-        match = False
-        options = [x for x in range(room.x1, room.x2)]
-        #print('north', options)
-        while not match and len(options) > 0:
-          #print(options)
-          x,y = R.choice(options), room.y1
-          try:
-            #print(self.board[y-1][x])
-            #print(self.board[y][x])
-            if self.board[y-1][x].state == FULL:
-              #print('makin a door')
-              self.board[y][x].setDoor(True)
-              self.board[y-1][x].setDoor(True)
-              match = True
-            else:
-              options.remove(x)
-          except IndexError:
-            continue
+  def placeDoors(self,byOrientation=True):
+    if byOrientation == True:
+      for room in self.chamberList:
+        #print(room)
+        if room.orientation == 'North':
+          match = False
+          options = [x for x in range(room.x1, room.x2)]
+          #print('north', options)
+          while not match and len(options) > 0:
+            #print(options)
+            x,y = R.choice(options), room.y1
+            try:
+              #print(self.board[y-1][x])
+              #print(self.board[y][x])
+              if self.board[y-1][x].state:
+                #print('makin a door')
+                self.board[y][x].setDoor(True)
+                self.board[y-1][x].setDoor(True)
+                match = True
+              else:
+                options.remove(x)
+            except IndexError:
+              continue
 
-      elif room.orientation == 'South':
-        match = False
-        options = [x for x in range(room.x1, room.x2)]
-        #print('south', options)
-        while not match and len(options) > 0:
-          #print(options)
-          x, y = R.choice(options), room.y2
-          try:
-            #print(self.board[y+1][x])
-            #print(self.board[y][x])
-            if self.board[y+1][x].state == FULL:
-              #print('makin a door')
-              self.board[y][x].setDoor(True)
-              self.board[y+1][x].setDoor(True)
-              match = True
-            else:
-              options.remove(x)
-          except IndexError:
-            continue
+        elif room.orientation == 'South':
+          match = False
+          options = [x for x in range(room.x1, room.x2)]
+          #print('south', options)
+          while not match and len(options) > 0:
+            #print(options)
+            x, y = R.choice(options), room.y2
+            try:
+              #print(self.board[y+1][x])
+              #print(self.board[y][x])
+              if self.board[y+1][x].state:
+                #print('makin a door')
+                self.board[y][x].setDoor(True)
+                self.board[y+1][x].setDoor(True)
+                match = True
+              else:
+                options.remove(x)
+            except IndexError:
+              continue
 
-      elif room.orientation == 'West':
-        match = False
-        options = [y for y in range(room.y1, room.y2+1)]
-        #print('west', options)
-        while not match and len(options)> 0:
-          #print(options)
-          x, y = room.x1, R.choice(options)
-          try:
-            #print(self.board[y][x-1])
-            #print(y,x, self.board[y][x])
-            if self.board[y][x-1].state == FULL and self.board[x][y].state == FULL:
-              #print('makin a door')
-              self.board[y][x].setDoor(True)
-              self.board[y][x-1].setDoor(True)
-              match = True
-            else:
-              options.remove(y)
-          except IndexError:
-            continue
+        elif room.orientation == 'West':
+          match = False
+          options = [y for y in range(room.y1, room.y2+1)]
+          #print('west', options)
+          while not match and len(options)> 0:
+            #print(options)
+            x, y = room.x1, R.choice(options)
+            try:
+              #print(self.board[y][x-1])
+              #print(y,x, self.board[y][x])
+              if self.board[y][x-1].state and self.board[x][y].state:
+                #print('makin a door')
+                self.board[y][x].setDoor(True)
+                self.board[y][x-1].setDoor(True)
+                match = True
+              else:
+                options.remove(y)
+            except IndexError:
+              continue
 
-      elif room.orientation == 'East':
+        elif room.orientation == 'East':
+          match = False
+          options = [y for y in range(room.y1, room.y2+1)]
+          #print('east', options)
+          while not match and len(options) > 0:
+            #print(options)
+            x, y = room.x2, R.choice(options)
+            try:
+              #print(self.board[y][x+1])
+              #print(self.board[y][x])
+              if self.board[y][x+1].state:
+                #print('makin a door')
+                self.board[y][x].setDoor(True)
+                self.board[y][x+1].setDoor(True)
+                match = True
+              else:
+                options.remove(y)
+            except IndexError:
+              continue
+    else:
+      rooms = []
+      rooms.extend(self.chamberList)
+      rooms.extend(self.hallList)
+#      for room in rooms:
+#        print(room)
+
+      for room in rooms:
+        #print(room)
+        options = [1,2,3,4]
+        side = R.choice(options)
+        #print(side)
+        edges = room.getEdge(side)
+        #print(edges)
+        #print('-'*20)
+        R.shuffle(edges)
+        cell = edges[0]
+
         match = False
-        options = [y for y in range(room.y1, room.y2+1)]
-        #print('east', options)
-        while not match and len(options) > 0:
-          #print(options)
-          x, y = room.x2, R.choice(options)
-          try:
-            #print(self.board[y][x+1])
-            #print(self.board[y][x])
-            if self.board[y][x+1].state == FULL:
-              #print('makin a door')
-              self.board[y][x].setDoor(True)
-              self.board[y][x+1].setDoor(True)
+        while match == False or len(options) == 0:
+          cellObj = self.board[cell[0]][cell[1]]
+          if side == 1:
+            otherCell = self.board[cell[0] - 1][cell[1]]
+            if otherCell.state and self.checkBounds((cell[0] - 1,cell[1])) and not room.inRoom(otherCell):
+              cellObj.setDoor(True)
+              otherCell.setDoor(True)
+              #print('door made')
               match = True
             else:
-              options.remove(y)
-          except IndexError:
-            continue
+              #print(edges)
+              del edges[0]
+
+          elif side == 2:
+            otherCell = self.board[cell[0]][cell[1] + 1]
+            if otherCell.state and self.checkBounds((cell[0],cell[1] +1)) and not room.inRoom(otherCell):
+              cellObj.setDoor(True)
+              otherCell.setDoor(True)
+              #print('door made')
+              match = True
+            else:
+              #print(edges)
+              del edges[0]
+
+          elif side == 3:
+            otherCell = self.board[cell[0] + 1][cell[1]]
+            if otherCell.state and self.checkBounds((cell[0] + 1,cell[1])) and not room.inRoom(otherCell):
+              cellObj.setDoor(True)
+              otherCell.setDoor(True)
+              match = True
+              #print('door made')
+            else:
+              #print(edges)
+              del edges[0]
+
+          elif side == 4:
+            otherCell = self.board[cell[0]][cell[1] - 1]
+            if otherCell.state and self.checkBounds((cell[0],cell[1] - 1)) and not room.inRoom(otherCell):
+              cellObj.setDoor(True)
+              otherCell.setDoor(True)
+              match = True
+              #print('door made')
+            else:
+              #print(edges)
+              del edges[0]
+
+          if len(edges) > 0:
+            cell = edges[0]
+          else:
+            options.remove(side)
+            if len(options) > 0:
+              side = R.choice(options)
+              #print(side)
+              edges = room.getEdge(side)
+              #print(edges)
+              R.shuffle(edges)
+              cell = edges[0]
+
+
+
 
   def hallwayPather(self, start, finish):
     '''Using A* search find the shortest path for the hallway
@@ -232,7 +312,7 @@ class Board(object):
       for neighbor in adjacents:
         if 0 <= neighbor[0] < self.y and 0 <= neighbor[1] < self.x:
 
-          if self.board[neighbor[0]][neighbor[1]].state != BLANK:
+          if self.board[neighbor[0]][neighbor[1]].state:
             continue
           if neighbor in closedSet:
             continue
@@ -245,9 +325,9 @@ class Board(object):
           cameFrom[neighbor] = current
           gScore[neighbor] = tentative_gScore
           fScore[neighbor] = gScore[neighbor] + dist(neighbor, (finish.yLoc, finish.xLoc))
-    #print('I never finished')
-    #count += 1
-    #print(count)
+
+    raise ValueError("No path exists")
+
     '''print('closedSet\n',closedSet)
     print('-'*50)
     print('openSet\n',openSet)
@@ -275,9 +355,11 @@ class Board(object):
         finishTuple = R.choice(options[0].getOrientSide())
         finishCell = self.board[finishTuple[0]][finishTuple[1]]
         #print(finishCell)
-        path = self.hallwayPather(startCell, finishCell)
-        #print(path)
-        hallway.addSequence(path)
+        try:
+          path = self.hallwayPather(startCell, finishCell)
+          hallway.addSequence(path)
+        except ValueError:
+          pass
         start = options.pop()
 
   def establishHallway(self, hallway):
@@ -286,7 +368,7 @@ class Board(object):
       cell = self.board[elem[0]][elem[1]]
       #print('Cell\n', cell)
       width = hallway.width
-      if cell.state == BLANK:
+      if not cell.state:
         cell.setState(FULL)
         cell.setMember('test')
     for elem in hallway.cells.keys():
@@ -294,16 +376,16 @@ class Board(object):
       for i in range(0 - width // 2, width // 2 + 1):
         cellPlaced = False
         if hallway.cells[elem] == 'North' or 'South':
-          if self.checkHallwayBounds((elem[0],elem[1] + i)):
+          if self.checkBounds((elem[0],elem[1] + i)):
             nextcell = self.board[elem[0]][elem[1] + i]
-            if nextcell.state == BLANK and cellPlaced == False:
+            if not nextcell.state and not cellPlaced:
               #print('nextcell - North/South Right\n', nextcell)
               nextcell.setState(FULL)
               nextcell.setMember('Hallway')
               cellPlaced = True
-          if self.checkHallwayBounds((elem[0],elem[1] -1)):
+          if self.checkBounds((elem[0],elem[1] - i)):
             nextcell = self.board[elem[0]][elem[1] - i]
-            if nextcell.state == BLANK and cellPlaced == False:
+            if not nextcell.state and not cellPlaced:
               #print('nextcell - North/South Left\n', nextcell)
               nextcell.setState(FULL)
               nextcell.setMember('Hallway')
@@ -311,16 +393,16 @@ class Board(object):
           else:
             break # Cells to the left and right are full or out of bounds
         if hallway.cells[elem] == 'West' or 'East':
-          if self.checkHallwayBounds((elem[0] - i,elem[1])):
+          if self.checkBounds((elem[0] - i,elem[1])):
             nextcell = self.board[elem[0] - i][elem[1]]
-            if nextcell.state == BLANK and cellPlaced == False:
+            if not nextcell.state and not cellPlaced:
               #print('nextcell - West/East Top\n', nextcell)
               nextcell.setState(FULL)
               nextcell.setMember('Hallway')
               cellPlaced = True
-          if self.checkHallwayBounds((elem[0] + i,elem[1])):
+          if self.checkBounds((elem[0] + i,elem[1])):
             nextcell = self.board[elem[0] + i][elem[1]]
-            if nextcell.state == BLANK and cellPlaced == False:
+            if not nextcell.state and not cellPlaced:
               #print('nextcell - West/East Bot\n', nextcell)
               nextcell.setState(FULL)
               nextcell.setMember('Hallway')
@@ -337,7 +419,7 @@ class Board(object):
       rep += '%3d'%(y)
       for x in range(len(self.board[y])):
         cell = self.board[y][x]
-        if cell.state == BLANK:
+        if not cell.state:
           rep += ' _ '
         elif cell.door:
           rep += ' D '
@@ -419,6 +501,41 @@ class Room(object):
   def getType(self):
     return self.type
 
+  def inRoom(self, cell):
+    if type(cell) != type((0,0)):
+      cellTup = cell.yLoc, cell.xLoc
+    elif type(cell) == type((0,0)):
+      cellTup = cell
+    else:
+      raise ValueError("cell must be a cell object or tuple")
+    if self.y1 <= cellTup[0] <= self.y2 and self.x1 <= cellTup[1] <= self.x2:
+      return True
+    else:
+      return False
+
+  def getAllEdges(self):
+    # returns the edge cells of a room
+    retSequence = set()
+    for y in range(self.y2 - self.y1 + 1):
+      retSequence.add((self.y1 + y, self.x1)) #Left side
+      retSequence.add((self.y1 + y, self.x2)) # Right Side
+    for x in range(self.x2 - self.x1 + 1):
+      retSequence.add((self.y1, self.x1 + x))
+      retSequence.add((self.y2, self.x1 + x))
+    return list(retSequence)
+
+  def getEdge(self, edge):
+    if edge == 1:
+      return [(self.y1, x) for x in range(self.x1, self.x2 + 1)]
+    elif edge == 2:
+      return [(y, self.x2) for y in range(self.y1, self.y2 + 1)]
+    elif edge == 3:
+      return [(self.y2, x) for x in range(self.x1, self.x2 + 1)]
+    elif edge == 4:
+      return [(y, self.x1) for y in range(self.y1, self.y2 + 1)]
+    else:
+      raise ValueError("edge parameter must be either 1, 2 , 3, 4 or 'North', 'East', 'South', 'West'")
+
   def getOrientSide(self):
     # returns a sequence of tuple cell locations along the orientation facing side of a room
     orientDict = {'North':[(self.y1 - 1, x) for x in range(self.x1, self.x2 + 1)],
@@ -446,7 +563,6 @@ class Hallway(object):
   def addSequence(self, sequence):
     '''Adds a sequence of cell tuples as the keys to the self.cells dictionary,
     also determines the path direction and stores that as the value'''
-
     if type(sequence) != type([]):
       raise ValueError("Sequence must be of type list")
 
@@ -516,9 +632,9 @@ def chambersSouth(board, hall, start, step, maxSize):
     newRoom = Room(start[0], start[0] + width - 1, start[1], start[1] + height - 1, 'Chamber', 'West')
     #print(newRoom)
     #input("south")
-    if board.checkOutofBounds(newRoom, True) == 'x':
+    if board.checkRoomBounds(newRoom, True) == 'x':
       widthOptions.remove(width)
-    if board.checkOutofBounds(newRoom, True) == 'y':
+    if board.checkRoomBounds(newRoom, True) == 'y':
       heightOptions.remove(height)
     if board.checkOverlap(newRoom):
       try:
@@ -544,9 +660,9 @@ def chambersWest(board, hall, start, step, maxSize):
     #input("West")
     newRoom = Room(start[0] - width + 1, start[0], start[1], start[1] + height - 1, 'Chamber', 'North')
     # print(newRoom)
-    if board.checkOutofBounds(newRoom, True) == 'x':
+    if board.checkRoomBounds(newRoom, True) == 'x':
       widthOptions.remove(width)
-    if board.checkOutofBounds(newRoom, True) == 'y':
+    if board.checkRoomBounds(newRoom, True) == 'y':
       heightOptions.remove(height)
     if board.checkOverlap(newRoom):
       try:
@@ -555,9 +671,6 @@ def chambersWest(board, hall, start, step, maxSize):
         width, height = 0, 0
       except IndexError:
         continue
-    #if start[0] - width <= hall.x1:
-      # chambers have reached the left edge of the hall, time to change directions
-      #finish = True
 
 def chambersEast(board, hall, start, step, maxSize):
   widthOptions = [w for w in range(3, maxSize + 1, step)]
@@ -568,9 +681,9 @@ def chambersEast(board, hall, start, step, maxSize):
     height = R.choice(heightOptions)
     newRoom = Room(start[0], start[0] + width - 1, start[1], start[1] - height + 1, 'Chamber', 'South')
   # print(newRoom)
-    if board.checkOutofBounds(newRoom, True) == 'x':
+    if board.checkRoomBounds(newRoom, True) == 'x':
       widthOptions.remove(width)
-    if board.checkOutofBounds(newRoom, True) == 'y':
+    if board.checkRoomBounds(newRoom, True) == 'y':
       heightOptions.remove(height)
     if board.checkOverlap(newRoom):
       try:
@@ -590,9 +703,9 @@ def chambersNorth(board, hall, start, step, maxSize):
     height = R.choice(heightOptions)
     newRoom = Room(start[0] - width + 1, start[0], start[1], start[1] - height + 1, 'Chamber', 'East')
       # print(newRoom)
-    if board.checkOutofBounds(newRoom, True) == 'x':
+    if board.checkRoomBounds(newRoom, True) == 'x':
       widthOptions.remove(width)
-    if board.checkOutofBounds(newRoom, True) == 'y':
+    if board.checkRoomBounds(newRoom, True) == 'y':
       heightOptions.remove(height)
     if board.checkOverlap(newRoom):
       try:
@@ -713,6 +826,7 @@ chambersAroundHall(board, hall2, hall2.orientation)
 hall3 = hallFactory(board)
 board.establishRoom(hall3)
 chambersAroundHall(board, hall3, hall3.orientation)
+
 #test3HallAndChamber(board)
 
 corridor = Hallway()
@@ -720,12 +834,12 @@ corridor = Hallway()
 board.addHallway(corridor)
 board.establishHallway(corridor)
 
-#path = board.hallwayPather(board.board[0][6],board.board[10][9])
-#corridor.addSequence(path)
-#board.establishHallway(corridor)
+# path = board.hallwayPather(board.board[0][6],board.board[10][9])
+# corridor.addSequence(path)
+# board.establishHallway(corridor)
 
 
-#board.placeDoors()
+board.placeDoors(byOrientation=False)
 print(board)
 
 
